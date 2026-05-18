@@ -1,0 +1,9 @@
+data/wpp_demographic_indicators.csv
+data/wpp_demographic_indicators.csv.gz
+data/tfr_annual.csv
+data/google_trends.csv
+data/adoption_table.csv
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
