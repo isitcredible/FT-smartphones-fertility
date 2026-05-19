@@ -1,6 +1,10 @@
 """
-Pull Google Trends interest-over-time for 'App Store' / 'Play Store' search
-terms in each of the eight FT countries, 2004-2024.
+Pull Google Trends interest-over-time for 'App Store' / 'Play Store' /
+'Android Market' search terms in each of the eight FT countries, 2004-2024.
+
+"Android Market" is the pre-March-2012 name for what is now Google Play; it
+has to be in the query set or the early-period signal in countries where
+Android ran ahead of iOS is suppressed.
 
 Output: data/google_trends.csv
 
@@ -18,14 +22,14 @@ DATA = ROOT / "data"
 DATA.mkdir(exist_ok=True)
 
 QUERIES = {
-    "USA": ("US", ["App Store", "Google Play"]),
-    "GBR": ("GB", ["App Store", "Google Play"]),
-    "AUS": ("AU", ["App Store", "Google Play"]),
-    "MEX": ("MX", ["App Store", "Google Play", "Play Store"]),
-    "IDN": ("ID", ["Play Store", "App Store"]),
-    "IRN": ("IR", ["Play Store", "App Store"]),
-    "EGY": ("EG", ["Play Store", "App Store", "متجر بلاي"]),
-    "SEN": ("SN", ["Play Store", "App Store"]),
+    "USA": ("US", ["App Store", "Google Play", "Android Market"]),
+    "GBR": ("GB", ["App Store", "Google Play", "Android Market"]),
+    "AUS": ("AU", ["App Store", "Google Play", "Android Market"]),
+    "MEX": ("MX", ["App Store", "Google Play", "Play Store", "Android Market"]),
+    "IDN": ("ID", ["Play Store", "App Store", "Android Market"]),
+    "IRN": ("IR", ["Play Store", "App Store", "Android Market"]),
+    "EGY": ("EG", ["Play Store", "App Store", "متجر بلاي", "Android Market"]),
+    "SEN": ("SN", ["Play Store", "App Store", "Android Market"]),
 }
 
 pytrends = TrendReq(hl="en-US", tz=0, timeout=(10, 30))

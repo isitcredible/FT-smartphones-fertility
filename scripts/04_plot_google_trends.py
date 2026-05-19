@@ -58,10 +58,11 @@ for ax, (iso, name, takeoff) in zip(axes.flatten(), COUNTRIES):
     ax.set_ylim(0, 100)
 
 fig.subplots_adjust(top=0.82, bottom=0.07, left=0.05, right=0.99, hspace=0.30, wspace=0.18)
-fig.suptitle("Google Trends interest in ‘App Store’ / ‘Play Store’",
+fig.suptitle("Google Trends interest in ‘App Store’ / ‘Play Store’ / ‘Android Market’",
              x=0.01, y=0.965, ha="left")
 fig.text(0.01, 0.905,
-         "Annual mean of the monthly index, max over local-language terms. "
+         "Annual mean of the monthly index, max over local-language terms "
+         "(‘Android Market’ being Google Play’s name before March 2012). "
          "Index is 0–100 relative to each country’s own peak.",
          fontsize=12, color="#555555", ha="left")
 fig.supylabel("Index (country-relative, 0–100)", x=0.005, fontsize=12)
