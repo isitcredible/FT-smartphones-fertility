@@ -1,8 +1,16 @@
 """
-Canonical replication of the FT chart: % change in TFR relative to a
-pre-smartphone trend, by years before/since the FT-stated 'smartphone
-take-off' year. The pre-trend is a log-linear fit to the five years
-immediately before each country's take-off year.
+Canonical replication of the FT 'unified trend' chart. The recipe
+reverse-engineered from the saved Flourish SVG is:
+
+    OLS fit of TFR (level, not log) on year over an 11-year window
+    from (takeoff - 10) inclusive to takeoff inclusive, then
+    extrapolated forward as a straight line. The published series is
+    100 * (actual / extrapolated - 1).
+
+Every deviation reproduces to four decimal places under this recipe -
+but only when the chart-implied take-off years are used, not the ones
+the article prose states. Two replications are produced for
+side-by-side comparison.
 
 Output: figures/replication.png
 """
@@ -12,56 +20,75 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from _style import OVERLAY_COLORS, add_source, apply_ft_style, country_color
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 FIG = ROOT / "figures"
 FIG.mkdir(exist_ok=True)
 
-FT = {
-    "USA": ("United States", 2007),
-    "GBR": ("United Kingdom", 2007),
-    "AUS": ("Australia", 2007),
-    "MEX": ("Mexico", 2012),
-    "IDN": ("Indonesia", 2012),
-    "IRN": ("Iran", 2015),
-    "EGY": ("Egypt", 2015),
-    "SEN": ("Senegal", 2015),
-}
+# (iso3, name, prose take-off, chart-implied take-off)
+COUNTRIES = [
+    ("USA", "United States", 2007, 2007),
+    ("GBR", "United Kingdom", 2007, 2009),
+    ("AUS", "Australia",      2007, 2008),
+    ("MEX", "Mexico",         2012, 2013),
+    ("IDN", "Indonesia",      2012, 2012),
+    ("IRN", "Iran",           2015, 2015),
+    ("EGY", "Egypt",          2015, 2014),
+    ("SEN", "Senegal",        2015, 2013),
+]
 
-PALETTE = ["#005ab5", "#00838f", "#003f5c", "#bc5090",
-          "#e07a5f", "#ef7d00", "#d62728", "#8c564b"]
-
-WINDOW = 5
-HORIZON = (-10, 16)
-
-tfr = pd.read_csv(DATA / "tfr_annual.csv")
+WINDOW = 11        # 11-year inclusive fit, takeoff-10..takeoff
+HORIZON = (-10, 10)
 
 
 def deviation(iso3, takeoff):
-    s = tfr[tfr["iso3"] == iso3].set_index("year")["TFR"].sort_index()
-    pre_years = np.arange(takeoff - WINDOW, takeoff)
+    s = (
+        tfr[tfr["iso3"] == iso3].set_index("year")["TFR"].sort_index()
+    )
+    pre_years = np.arange(takeoff - (WINDOW - 1), takeoff + 1)
     pre = s.reindex(pre_years).dropna()
-    slope, intercept = np.polyfit(pre.index.values, np.log(pre.values), 1)
+    slope, intercept = np.polyfit(pre.index.values, pre.values, 1)
     event_years = np.arange(takeoff + HORIZON[0], takeoff + HORIZON[1] + 1)
     actual = s.reindex(event_years).values
-    predicted = np.exp(intercept + slope * event_years)
-    return event_years - takeoff, 100 * (actual / predicted - 1)
+    predicted = intercept + slope * event_years
+    return event_years - takeoff, 100.0 * (actual / predicted - 1.0)
 
 
-fig, ax = plt.subplots(figsize=(9, 6))
-for (iso, (name, t)), color in zip(FT.items(), PALETTE):
-    et, dev = deviation(iso, t)
-    ax.plot(et, dev, color=color, lw=2.0, label=name)
+apply_ft_style()
+tfr = pd.read_csv(DATA / "tfr_annual.csv")
 
-ax.axhline(0, color="black", lw=0.7)
-ax.axvline(0, color="black", lw=0.7, ls="--", alpha=0.6)
-ax.set_xlabel("Years before / since 'smartphone take-off'")
-ax.set_ylabel("% change in TFR vs pre-smartphone trend")
-ax.set_title("Replicating the FT chart\n"
-             "(5-year log-linear pre-trend, FT-stated take-off years)")
-ax.legend(loc="lower left", fontsize=9, frameon=False)
-ax.grid(alpha=0.3)
-ax.set_xlim(HORIZON)
-fig.tight_layout()
-fig.savefig(FIG / "replication.png", dpi=160)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6.5), sharey=True)
+
+for iso, name, prose, chart in COUNTRIES:
+    et, dev = deviation(iso, prose)
+    ax1.plot(et, dev, color=country_color(name), lw=2.0, label=name)
+    et, dev = deviation(iso, chart)
+    ax2.plot(et, dev, color=country_color(name), lw=2.0, label=name)
+
+for ax, title in ((ax1, "Using the prose take-off years"),
+                  (ax2, "Using the chart-implied take-off years")):
+    ax.axhline(0, color="#262A33", lw=0.7)
+    ax.axvline(0, color="#262A33", lw=0.7, ls="--", alpha=0.5)
+    ax.set_xlabel("Years before / since ‘smartphone take-off’")
+    ax.set_xlim(HORIZON)
+    ax.set_title(title)
+
+ax1.set_ylabel("% change in TFR vs pre-smartphone trend")
+ax2.legend(loc="lower left", fontsize=9, ncol=2)
+
+fig.suptitle("Replicating the FT ‘unified trend’ chart",
+             x=0.01, ha="left")
+fig.text(0.01, 0.93,
+         "11-year linear pre-trend fitted on (takeoff-10..takeoff) and extrapolated. "
+         "The chart-implied years produce a steeper, more uniform 'plunge'.",
+         fontsize=10, color="#555555", ha="left")
+add_source(
+    fig,
+    "Source: UN World Population Prospects 2024; "
+    "FT Flourish SVG (axis-calibrated). isitcredible.com",
+)
+fig.tight_layout(rect=(0.01, 0.03, 1, 0.92))
+fig.savefig(FIG / "replication.png")
 print(f"Wrote {FIG / 'replication.png'}")
