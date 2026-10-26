@@ -67,7 +67,4 @@ minute and is subject to Google's rate limits.
 
 ## Licence
 
-MIT. Author: Joseph Francis.
-
-Part of [isitcredible.com](https://isitcredible.com), run by The
-Catalogue of Errors Ltd.
+MIT. Copyright (c) 2026 The Catalogue of Errors Ltd ([isitcredible.com](https://isitcredible.com)).
